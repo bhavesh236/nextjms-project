@@ -1,26 +1,40 @@
-// import postgres from 'postgres';
+import postgres from 'postgres';
 
-// const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' });
+// Initialize PostgreSQL connection
+const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' });
 
-// async function listInvoices() {
-// 	const data = await sql`
-//     SELECT invoices.amount, customers.name
-//     FROM invoices
-//     JOIN customers ON invoices.customer_id = customers.id
-//     WHERE invoices.amount = 666;
-//   `;
+async function listInvoices() {
+  try {
+    const data = await sql`
+      SELECT invoices.amount, customers.name
+      FROM invoices
+      JOIN customers ON invoices.customer_id = customers.id
+      WHERE invoices.amount = 666;
+    `;
 
-// 	return data;
-// }
+    return data;
+  } catch (error) {
+    console.error('Database query failed:', error);
+    throw new Error('Failed to fetch invoices');
+  }
+}
 
 export async function GET() {
-  return Response.json({
-    message:
-      'Uncomment this file and remove this line. You can delete this file when you are finished.',
-  });
-  // try {
-  // 	return Response.json(await listInvoices());
-  // } catch (error) {
-  // 	return Response.json({ error }, { status: 500 });
-  // }
+  try {
+    const invoices = await listInvoices();
+    return new Response(JSON.stringify(invoices), {
+      headers: { 'Content-Type': 'application/json' },
+      status: 200,
+    });
+  } catch (error) {
+    console.error('API error:', error);
+    
+    // ✅ Fix: TypeScript-safe error handling
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+    return new Response(JSON.stringify({ error: errorMessage }), {
+      headers: { 'Content-Type': 'application/json' },
+      status: 500,
+    });
+  }
 }
